@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目复盘报告生成器</title>
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f6f7f9;
+    --bg-tertiary: #eaecef;
+    --text-primary: #1a1a1a;
+    --text-secondary: #4a4a4a;
+    --text-tertiary: #8a8a8a;
+    --border: #d0d4da;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    margin: 0;
+    padding: 20px;
+    line-height: 1.5;
+  }
+  .container { max-width: 800px; margin: 0 auto; }
+  h2 { margin-bottom: 4px; }
+  .subtitle { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
+  .section { background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .section-title { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .section-title .badge { background: var(--accent); color: white; font-size: 12px; padding: 2px 8px; border-radius: 4px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 500; }
+  .field input, .field textarea, .field select {
+    width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--bg-primary); color: var(--text-primary); font-size: 14px; font-family: inherit;
+  }
+  .field textarea { min-height: 60px; resize: vertical; }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 500; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-secondary { background: var(--bg-tertiary); color: var(--text-primary); }
+  .output { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 12px; padding: 20px; white-space: pre-wrap; font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace; font-size: 13px; line-height: 1.6; max-height: 600px; overflow-y: auto; }
+  .tab-bar { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; flex-wrap: wrap; }
+  .tab { padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary); user-select: none; }
+  .tab.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .hidden { display: none !important; }
+  .hint { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+  .placeholder { text-align: center; padding: 60px 20px; color: var(--text-tertiary); }
+  .placeholder p { margin: 0; }
+  .placeholder .sub { font-size: 12px; margin-top: 8px; }
+  @media (max-width: 600px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    body { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>📋 项目复盘报告生成器</h2>
+  <p class="subtitle">按三条线填写，自动生成标准复盘报告</p>
+
+  <div class="tab-bar">
+    <div class="tab active" onclick="switchTab('basic', this)">基础信息</div>
+    <div class="tab" onclick="switchTab('comm', this)">沟通复盘</div>
+    <div class="tab" onclick="switchTab('process', this)">流程复盘</div>
+    <div class="tab" onclick="switchTab('ops', this)">实操复盘</div>
+    <div class="tab" onclick="switchTab('result', this)">生成报告</div>
+  </div>
+
+  <!-- 基础信息 -->
+  <div id="tab-basic" class="tab-content">
+    <div class="section">
+      <div class="section-title">项目基础信息</div>
+      <div class="grid-2">
+        <div class="field"><label>项目名称</label><input id="p_name" placeholder="如：XX客户官网重构项目"></div>
+        <div class="field"><label>客户名称</label><input id="p_client" placeholder="客户公司名"></div>
+      </div>
+      <div class="grid-3">
+        <div class="field"><label>商务经理</label><input id="p_biz" placeholder="负责沟通/流程复盘"></div>
+        <div class="field"><label>技术人员</label><input id="p_tech" placeholder="负责实操复盘"></div>
+        <div class="field"><label>项目经理/汇总人</label><input id="p_pm" placeholder="负责统稿"></div>
+      </div>
+      <div class="grid-2">
+        <div class="field"><label>项目周期</label><input id="p_period" placeholder="如：2026.06.01 - 2026.08.15"></div>
+        <div class="field"><label>项目状态</label>
+          <select id="p_status">
+            <option value="已交付验收">已交付验收</option>
+            <option value="已交付待验收">已交付待验收</option>
+            <option value="进行中">进行中（阶段复盘）</option>
+            <option value="已终止">已终止</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">1. 项目目标 <span class="badge">必填</span></div>
+      <div class="field">
+        <label>当初约定的交付范围</label>
+        <textarea id="goal_scope" placeholder="合同/策划书中约定的交付内容，尽量逐条列出"></textarea>
+      </div>
+      <div class="field">
+        <label>验收标准</label>
+        <textarea id="goal_accept" placeholder="客户签字确认的验收标准是什么"></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">2. 项目过程 <span class="badge">必填</span></div>
+      <div class="field">
+        <label>关键时间线与里程碑</label>
+        <textarea id="timeline" placeholder="按时间顺序列出关键节点，如：&#10;06.01 签约&#10;06.10 需求确认会&#10;06.25 初稿交付&#10;..." style="min-height: 100px;"></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">3. 结果评估 <span class="badge">必填</span></div>
+      <div class="field">
+        <label>实际交付了什么</label>
+        <textarea id="result_deliver" placeholder="与目标对比，实际完成了哪些交付物"></textarea>
+      </div>
+      <div class="field">
+        <label>验收状态</label>
+        <textarea id="result_accept" placeholder="客户是否验收？一次性通过还是有修改？"></textarea>
+      </div>
+      <div class="field">
+        <label>与目标的差距</label>
+        <textarea id="result_gap" placeholder="漏做了？延期了？质量未达标？"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- 沟通复盘 -->
+  <div id="tab-comm" class="tab-content hidden">
+    <div class="section">
+      <div class="section-title">沟通复盘 <span class="badge">商务经理</span></div>
+      <p class="hint" style="margin-bottom:12px;">以客户沟通记录为对象，反思沟通方式与协作状态。</p>
+
+      <div class="field">
+        <label>需求传达是否清晰？有无理解偏差？</label>
+        <textarea id="comm_clarity" placeholder="客户是否准确理解了我们的方案？我们是否准确理解了客户需求？偏差出现在哪里？"></textarea>
+      </div>
+      <div class="field">
+        <label>信息回流是否顺畅？有无「指令下达但结果不回来」？</label>
+        <textarea id="comm_feedback" placeholder="哪些环节出现了信息断流？原因是什么？"></textarea>
+      </div>
+      <div class="field">
+        <label>响应时效如何？客户提问后多久得到有效回复？</label>
+        <textarea id="comm_response" placeholder="平均响应时间？哪些时段/问题响应慢？"></textarea>
+      </div>
+      <div class="field">
+        <label>识别容易引起客户不满的表达方式</label>
+        <textarea id="comm_phrases" placeholder="记录具体话术或态度问题"></textarea>
+      </div>
+      <div class="field">
+        <label>沟通数据依据</label>
+        <textarea id="comm_data" placeholder="企业微信聊天记录、邮件、飞书文档等"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- 流程复盘 -->
+  <div id="tab-process" class="tab-content hidden">
+    <div class="section">
+      <div class="section-title">流程复盘 <span class="badge">商务经理</span></div>
+      <p class="hint" style="margin-bottom:12px;">以项目商务文档为对象，检查策划书、合同、报价三个环节。</p>
+
+      <div class="field">
+        <label>策划书：方案是否符合客户真实需求？有无过度承诺或漏项？</label>
+        <textarea id="proc_proposal" placeholder="方案中的哪些内容客户实际不需要？哪些需求在策划阶段被遗漏？"></textarea>
+      </div>
+      <div class="field">
+        <label>合同：条款是否覆盖交付范围、验收标准、款项节点？有无风险敞口？</label>
+        <textarea id="proc_contract" placeholder="哪些条款模糊？验收标准是否可量化？付款节点是否合理？"></textarea>
+      </div>
+      <div class="field">
+        <label>报价：价格与工作量是否匹配？有无漏算成本或压价？</label>
+        <textarea id="proc_price" placeholder="实际工时 vs 报价工时？哪些成本被低估？"></textarea>
+      </div>
+      <div class="field">
+        <label>流程衔接：从洽谈、策划到签约有无断点？</label>
+        <textarea id="proc_handoff" placeholder="哪个环节卡得最久？原因是什么？"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- 实操复盘 -->
+  <div id="tab-ops" class="tab-content hidden">
+    <div class="section">
+      <div class="section-title">实操复盘 <span class="badge">技术人员</span></div>
+      <p class="hint" style="margin-bottom:12px;">以项目执行为对象，梳理实际推进中的卡点。</p>
+
+      <div class="field">
+        <label>技术卡点：哪些环节比预期难？原因是什么？</label>
+        <textarea id="ops_tech" placeholder="技术难点、方案选型失误、第三方依赖问题等"></textarea>
+      </div>
+      <div class="field">
+        <label>资源卡点：人力、数据、工具、权限哪些不够用？</label>
+        <textarea id="ops_resource" placeholder="人手不足？数据拿不到？工具 license 不够？权限审批慢？"></textarea>
+      </div>
+      <div class="field">
+        <label>协作卡点：与客户接口人配合、内部跨部门协作有无阻碍？</label>
+        <textarea id="ops_collab" placeholder="客户决策链长？内部交接不清？"></textarea>
+      </div>
+      <div class="field">
+        <label>质量卡点：交付物验收时暴露了什么问题？</label>
+        <textarea id="ops_quality" placeholder="Bug 数量？性能不达标？UI 还原度问题？"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- 生成报告 -->
+  <div id="tab-result" class="tab-content hidden">
+    <div style="display:flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+      <button class="btn btn-primary" onclick="generateReport()">📝 生成复盘报告</button>
+      <button class="btn btn-secondary" onclick="copyReport()">📋 复制全文</button>
+    </div>
+    <div id="reportOutput" class="output hidden"></div>
+    <div id="reportPlaceholder" class="placeholder">
+      <p>点击「生成复盘报告」查看结果</p>
+      <p class="sub">建议先在前面四个标签页填写完整信息</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(name, el) {
+    document.querySelectorAll('.tab-content').forEach(function(tab) { tab.classList.add('hidden'); });
+    document.querySelectorAll('.tab').forEach(function(tab) { tab.classList.remove('active'); });
+    document.getElementById('tab-' + name).classList.remove('hidden');
+    el.classList.add('active');
+  }
+
+  function getVal(id) {
+    var el = document.getElementById(id);
+    return el ? (el.value || '').trim() : '';
+  }
+
+  function section(title, content) {
+    if (!content) return '';
+    return '## ' + title + '\n\n' + content + '\n\n';
+  }
+
+  function generateReport() {
+    var name = getVal('p_name') || '（未填写项目名称）';
+    var client = getVal('p_client');
+    var biz = getVal('p_biz');
+    var tech = getVal('p_tech');
+    var pm = getVal('p_pm');
+    var period = getVal('p_period');
+    var status = getVal('p_status');
+
+    var report = '# 项目复盘报告：' + name + '\n\n';
+    report += '> **客户**：' + (client || '—') + ' ｜ **周期**：' + (period || '—') + ' ｜ **状态**：' + status + '\n';
+    report += '> **商务经理**：' + (biz || '—') + ' ｜ **技术人员**：' + (tech || '—') + ' ｜ **汇总人**：' + (pm || '—') + '\n\n';
+    report += '---\n\n';
+
+    report += section('一、项目目标', '**交付范围**：\n' + (getVal('goal_scope') || '（待填写）') + '\n\n**验收标准**：\n' + (getVal('goal_accept') || '（待填写）'));
+    report += section('二、项目过程', getVal('timeline') || '（待填写）');
+    report += section('三、结果评估', '**实际交付**：\n' + (getVal('result_deliver') || '（待填写）') + '\n\n**验收状态**：\n' + (getVal('result_accept') || '（待填写）') + '\n\n**与目标差距**：\n' + (getVal('result_gap') || '（待填写）'));
+
+    report += '---\n\n';
+    report += section('四、沟通与流程复盘', '**负责人**：' + (biz || '商务经理') + '\n\n' +
+      '### 4.1 需求传达与理解偏差\n' + (getVal('comm_clarity') || '（待填写）') + '\n\n' +
+      '### 4.2 信息回流顺畅度\n' + (getVal('comm_feedback') || '（待填写）') + '\n\n' +
+      '### 4.3 响应时效\n' + (getVal('comm_response') || '（待填写）') + '\n\n' +
+      '### 4.4 易引起不满的表达方式\n' + (getVal('comm_phrases') || '（待填写）') + '\n\n' +
+      '### 4.5 策划书问题\n' + (getVal('proc_proposal') || '（待填写）') + '\n\n' +
+      '### 4.6 合同与风险敞口\n' + (getVal('proc_contract') || '（待填写）') + '\n\n' +
+      '### 4.7 报价合理性\n' + (getVal('proc_price') || '（待填写）') + '\n\n' +
+      '### 4.8 流程衔接断点\n' + (getVal('proc_handoff') || '（待填写）')
+    );
+
+    report += '---\n\n';
+    report += section('五、实操复盘', '**负责人**：' + (tech || '技术人员') + '\n\n' +
+      '### 5.1 技术卡点\n' + (getVal('ops_tech') || '（待填写）') + '\n\n' +
+      '### 5.2 资源卡点\n' + (getVal('ops_resource') || '（待填写）') + '\n\n' +
+      '### 5.3 协作卡点\n' + (getVal('ops_collab') || '（待填写）') + '\n\n' +
+      '### 5.4 质量卡点\n' + (getVal('ops_quality') || '（待填写）')
+    );
+
+    report += '---\n\n';
+    report += '## 六、后续行动\n\n';
+    report += '| 改进措施 | 责任人 | 截止时间 | 状态 |\n';
+    report += '|---------|--------|---------|------|\n';
+    report += '| （待补充） | | | 待开始 |\n';
+    report += '| （待补充） | | | 待开始 |\n\n';
+
+    report += '---\n\n';
+    report += '## 复盘成果回写清单\n\n';
+    report += '- [ ] 客户偏好与反馈 → 客户档案\n';
+    report += '- [ ] 沟通与流程教训 → 商务工作手册\n';
+    report += '- [ ] 技术卡点与解法 → 第二大脑 / 技术文档\n';
+    report += '- [ ] 改进行动 → 路线图与待办\n';
+    report += '- [ ] 复盘报告 → 项目文档目录归档\n';
+
+    var out = document.getElementById('reportOutput');
+    var ph = document.getElementById('reportPlaceholder');
+    out.textContent = report;
+    out.classList.remove('hidden');
+    ph.classList.add('hidden');
+  }
+
+  function copyReport() {
+    var text = document.getElementById('reportOutput').textContent;
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        var btn = event.target;
+        var old = btn.textContent;
+        btn.textContent = '✅ 已复制';
+        setTimeout(function() { btn.textContent = old; }, 1500);
+      });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      var btn = event.target;
+      var old = btn.textContent;
+      btn.textContent = '✅ 已复制';
+      setTimeout(function() { btn.textContent = old; }, 1500);
+    }
+  }
+</script>
+</body>
+</html>
