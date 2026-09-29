@@ -1,4 +1,4 @@
-# quanttide-laboratory-of-project-management
+# quanttide-project-lab
 
 量潮项目管理实验室 — 实验性与原型项目汇聚地。
 
